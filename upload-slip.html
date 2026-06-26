@@ -280,7 +280,7 @@ async function saveSlip() {
 
     setProgress(40, 'กำลังเตรียมไฟล์...');
 
-    const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwGZ7ll8o_zNKe4DX6aAcimZbCQT3kYui0Ky5HaCe1cHzH9xjOh7RKlEbeSwvu3uygx/exec";
+    const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwUZ4Jy9xcg7wHtrJOs8sHGbCBSufYMq_oSo0JYyb4eRH6HVEyz2ZEZunre3fpAt2yX/exec";
 
     setProgress(60, 'กำลังอัพโหลดสลิป...');
 
@@ -291,7 +291,9 @@ async function saveSlip() {
       body: JSON.stringify({
         image: "data:" + (file.type || "image/jpeg") + ";base64," + base64,
         mimeType: file.type || "image/jpeg",
-        fileName: fname
+        fileName: fname,
+        customerName: document.getElementById('name').value.trim() || '-',
+        amount: document.getElementById('amount').value.trim() || '0'
       })
     });
 
