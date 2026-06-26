@@ -1,0 +1,407 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>บันทึกสลิป – คลินิก หมออรัญ</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: 'Sarabun', 'Noto Sans Thai', sans-serif;
+    background: #eef2f7;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+  }
+
+  .header {
+    width: 100%;
+    background: linear-gradient(135deg, #1a6fa8, #0e4d7a);
+    color: white;
+    text-align: center;
+    padding: 22px 20px 20px;
+    border-radius: 0 0 24px 24px;
+    box-shadow: 0 4px 16px rgba(14,77,122,0.25);
+    margin-bottom: 20px;
+  }
+  .header h1 { font-size: 20px; font-weight: 700; }
+  .header p  { font-size: 13px; opacity: 0.8; margin-top: 3px; }
+
+  .wrap {
+    width: 100%;
+    max-width: 440px;
+    padding: 0 16px 40px;
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+  }
+
+  /* Big camera button */
+  .cam-btn {
+    width: 100%;
+    height: 200px;
+    border: 3px dashed #8ab4d4;
+    border-radius: 20px;
+    background: #f0f8ff;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    position: relative;
+    transition: background 0.2s, border-color 0.2s;
+  }
+  .cam-btn:hover { background: #ddeeff; border-color: #1a6fa8; }
+  .cam-btn input {
+    position: absolute; inset: 0;
+    opacity: 0; cursor: pointer;
+    width: 100%; height: 100%;
+  }
+  .cam-btn .cam-icon { font-size: 64px; }
+  .cam-btn p { font-size: 17px; font-weight: 700; color: #1a6fa8; margin-top: 8px; }
+
+  /* Preview */
+  #preview-wrap { display: none; text-align: center; }
+  #preview-wrap img {
+    width: 100%; max-height: 300px;
+    border-radius: 16px;
+    box-shadow: 0 2px 14px rgba(0,0,0,0.15);
+    object-fit: contain;
+  }
+  .retake-btn {
+    margin-top: 10px;
+    padding: 8px 22px;
+    border: 1.5px solid #aaa;
+    border-radius: 20px;
+    font-size: 14px;
+    color: #555;
+    background: white;
+    cursor: pointer;
+    font-family: inherit;
+  }
+
+  /* Optional name/phone */
+  .optional-row {
+    display: flex;
+    gap: 10px;
+  }
+  .optional-row input {
+    flex: 1;
+    padding: 13px 14px;
+    border: 2px solid #d0dce8;
+    border-radius: 12px;
+    font-size: 15px;
+    font-family: inherit;
+    color: #222;
+    background: white;
+  }
+  .optional-row input:focus {
+    outline: none;
+    border-color: #1a6fa8;
+  }
+  .hint { font-size: 12px; color: #999; text-align: center; }
+
+  /* Save button */
+  .save-btn {
+    width: 100%;
+    padding: 18px;
+    background: linear-gradient(135deg, #1a6fa8, #0e4d7a);
+    color: white;
+    font-size: 19px;
+    font-weight: 700;
+    font-family: inherit;
+    border: none;
+    border-radius: 16px;
+    cursor: pointer;
+    box-shadow: 0 4px 16px rgba(14,77,122,0.3);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    transition: opacity 0.2s;
+  }
+  .save-btn:disabled { opacity: 0.55; cursor: not-allowed; }
+
+  .spinner {
+    width: 22px; height: 22px;
+    border: 3px solid rgba(255,255,255,0.35);
+    border-top-color: white;
+    border-radius: 50%;
+    animation: spin 0.75s linear infinite;
+    display: none;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  /* Progress */
+  .prog-wrap { display: none; }
+  .prog-bg { background: #d0dce8; border-radius: 99px; height: 7px; overflow: hidden; }
+  .prog-fill {
+    height: 7px;
+    background: linear-gradient(90deg, #1a6fa8, #3eb5f1);
+    border-radius: 99px;
+    width: 0%;
+    transition: width 0.3s ease;
+  }
+  .prog-txt { font-size: 13px; color: #666; text-align: center; margin-top: 5px; }
+
+  /* Result */
+  .result { display: none; border-radius: 20px; padding: 28px 20px; text-align: center; }
+  .result.ok  { background: #e6f9ee; border: 2px solid #2ecc71; }
+  .result.err { background: #fff0f0; border: 2px solid #e05c5c; }
+  .result-icon { font-size: 56px; }
+  .result h2 { font-size: 20px; font-weight: 700; margin: 10px 0 8px; }
+  .result.ok h2  { color: #1a7a4a; }
+  .result.err h2 { color: #c0392b; }
+  .result p { font-size: 15px; color: #444; }
+  .again-btn {
+    margin-top: 20px;
+    padding: 13px 36px;
+    background: #1a6fa8;
+    color: white;
+    border: none;
+    border-radius: 12px;
+    font-size: 16px;
+    font-weight: 700;
+    font-family: inherit;
+    cursor: pointer;
+  }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <h1>🏥 คลินิก หู คอ จมูก หมออรัญ</h1>
+  <p>บันทึกสลิปโอนเงิน</p>
+</div>
+
+<div class="wrap" id="main-wrap">
+
+  <!-- Camera -->
+  <div class="cam-btn" id="cam-area">
+    <input type="file" id="file-input" accept="image/*" capture="environment">
+    <div class="cam-icon">📷</div>
+    <p>ถ่ายรูปสลิป</p>
+  </div>
+
+  <!-- Preview (hidden until photo taken) -->
+  <div id="preview-wrap">
+    <img id="preview-img" src="" alt="สลิป">
+    <br>
+    <button class="retake-btn" onclick="retake()">🔄 ถ่ายใหม่</button>
+  </div>
+
+  <!-- Amount -->
+  <input type="number" id="amount" placeholder="ยอดเงิน (บาท)" inputmode="decimal"
+    style="width:100%;padding:15px 16px;border:2px solid #d0dce8;border-radius:12px;font-size:18px;font-family:inherit;color:#222;background:white;text-align:center;">
+
+  <!-- Name + Phone (optional) -->
+  <div class="optional-row">
+    <input type="text" id="name" placeholder="ชื่อลูกค้า" autocomplete="off">
+    <input type="tel" id="phone" placeholder="เบอร์โทร" inputmode="tel">
+  </div>
+  <div class="hint">ชื่อและเบอร์ — ใส่หรือไม่ก็ได้</div>
+
+  <!-- Progress -->
+  <div class="prog-wrap" id="prog-wrap">
+    <div class="prog-bg"><div class="prog-fill" id="prog-fill"></div></div>
+    <div class="prog-txt" id="prog-txt">กำลังบันทึก...</div>
+  </div>
+
+  <!-- Save -->
+  <button class="save-btn" id="save-btn" onclick="saveSlip()">
+    <span id="btn-txt">💾 บันทึกสลิป</span>
+    <div class="spinner" id="spinner"></div>
+  </button>
+
+  <!-- Results -->
+  <div class="result ok" id="res-ok">
+    <div class="result-icon">✅</div>
+    <h2>บันทึกสำเร็จ!</h2>
+    <p id="ok-msg"></p>
+    <button class="again-btn" onclick="resetAll()">📷 บันทึกรายการถัดไป</button>
+  </div>
+
+  <div class="result err" id="res-err">
+    <div class="result-icon">❌</div>
+    <h2>เกิดข้อผิดพลาด</h2>
+    <p id="err-msg"></p>
+    <button class="again-btn" onclick="document.getElementById('res-err').style.display='none'">🔄 ลองใหม่</button>
+  </div>
+
+</div>
+
+<script>
+const FOLDER_ID = "1X2nytgkc7Eo2uAQyd8ZPhctg7xHiBydy";
+let file = null;
+
+document.getElementById('file-input').addEventListener('change', function(e) {
+  const f = e.target.files[0];
+  if (f) pick(f);
+});
+
+function pick(f) {
+  file = f;
+  const reader = new FileReader();
+  reader.onload = e => {
+    document.getElementById('preview-img').src = e.target.result;
+    document.getElementById('cam-area').style.display = 'none';
+    document.getElementById('preview-wrap').style.display = 'block';
+  };
+  reader.readAsDataURL(f);
+}
+
+function retake() {
+  file = null;
+  document.getElementById('file-input').value = '';
+  document.getElementById('cam-area').style.display = 'flex';
+  document.getElementById('preview-wrap').style.display = 'none';
+}
+
+async function getOrCreateDayFolder(label) {
+  // Search for existing folder with this date label inside FOLDER_ID
+  const searchRes = await fetch("https://api.anthropic.com/v1/messages", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      model: "claude-sonnet-4-6",
+      max_tokens: 500,
+      system: "You manage Google Drive via MCP. Reply ONLY with valid JSON, no markdown.",
+      mcp_servers: [{ type: "url", url: "https://drivemcp.googleapis.com/mcp/v1", name: "google-drive" }],
+      messages: [{
+        role: "user",
+        content: `Search Google Drive for a folder named exactly "${label}" inside parent folder ID: ${FOLDER_ID}. If found, reply {"found":true,"id":"..."}. If not found, create a new folder named "${label}" inside parent folder ID: ${FOLDER_ID}, then reply {"found":false,"id":"<new_folder_id>"}.`
+      }]
+    })
+  });
+  const data = await searchRes.json();
+  const txt = (data.content || []).filter(b => b.type === "text").map(b => b.text).join("");
+  try {
+    const json = JSON.parse(txt.replace(/\`\`\`json|\`\`\`/g,'').trim());
+    return json.id;
+  } catch {
+    // fallback to root folder
+    return FOLDER_ID;
+  }
+}
+
+async function saveSlip() {
+  if (!file) { alert('กรุณาถ่ายรูปสลิปก่อน'); return; }
+
+  setLoading(true);
+  try {
+    const base64 = await toBase64(file);
+
+    const now = new Date();
+    const d = `${now.getFullYear()}${p(now.getMonth()+1)}${p(now.getDate())}`;
+    const t = `${p(now.getHours())}${p(now.getMinutes())}${p(now.getSeconds())}`;
+    const name   = document.getElementById('name').value.trim().replace(/\s+/g,'_') || 'noname';
+    const phone  = document.getElementById('phone').value.trim() || '';
+    const amount = document.getElementById('amount').value.trim();
+    const ext    = file.name.split('.').pop() || 'jpg';
+    const amtPart = amount ? `_${amount}บาท` : '';
+    const fname = phone
+      ? `${d}_${t}_${name}_${phone}${amtPart}.${ext}`
+      : `${d}_${t}_${name}${amtPart}.${ext}`;
+
+    setProgress(40, 'กำลังเตรียม folder วันที่...');
+
+    // Step 1: get or create today's subfolder
+    const todayLabel = `${now.getFullYear()}-${p(now.getMonth()+1)}-${p(now.getDate())}`;
+    const subFolderId = await getOrCreateDayFolder(todayLabel);
+
+    setProgress(60, 'กำลังอัพโหลดสลิป...');
+
+    const res = await fetch("https://api.anthropic.com/v1/messages", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        model: "claude-sonnet-4-6",
+        max_tokens: 1000,
+        system: "You upload files to Google Drive via MCP. Reply ONLY with valid JSON, no markdown.",
+        mcp_servers: [{ type: "url", url: "https://drivemcp.googleapis.com/mcp/v1", name: "google-drive" }],
+        messages: [{
+          role: "user",
+          content: [
+            { type: "image", source: { type: "base64", media_type: file.type || "image/jpeg", data: base64 } },
+            { type: "text", text: `Upload this image to Google Drive folder ID: ${subFolderId}\nFilename: ${fname}\nReply JSON only: {"success":true,"fileId":"..."} or {"success":false,"error":"..."}` }
+          ]
+        }]
+      })
+    });
+
+    setProgress(80, 'กำลังบันทึก...');
+    const data = await res.json();
+
+    let txt = (data.content || []).filter(b => b.type === "text").map(b => b.text).join("");
+    let result;
+    try {
+      result = JSON.parse(txt.replace(/```json|```/g,'').trim());
+    } catch {
+      result = (txt.includes("success") || txt.includes("fileId"))
+        ? { success: true }
+        : { success: false, error: txt || "ไม่ทราบสาเหตุ" };
+    }
+
+    setProgress(100, 'เสร็จ!');
+
+    if (result.success) {
+      showOk(fname);
+    } else {
+      showErr(result.error || "อัพโหลดไม่สำเร็จ");
+    }
+  } catch(e) {
+    showErr(e.message);
+  }
+}
+
+function toBase64(f) {
+  return new Promise((res,rej) => {
+    const r = new FileReader();
+    r.onload = () => res(r.result.split(',')[1]);
+    r.onerror = rej;
+    r.readAsDataURL(f);
+  });
+}
+
+function setLoading(on) {
+  document.getElementById('save-btn').disabled = on;
+  document.getElementById('spinner').style.display = on ? 'block' : 'none';
+  document.getElementById('btn-txt').textContent = on ? 'กำลังบันทึก...' : '💾 บันทึกสลิป';
+  document.getElementById('prog-wrap').style.display = on ? 'block' : 'none';
+}
+
+function setProgress(pct, msg) {
+  document.getElementById('prog-fill').style.width = pct + '%';
+  document.getElementById('prog-txt').textContent = msg;
+}
+
+function showOk(fname) {
+  setLoading(false);
+  document.getElementById('res-ok').style.display = 'block';
+  document.getElementById('ok-msg').textContent = 'บันทึกไฟล์แล้ว: ' + fname;
+}
+
+function showErr(msg) {
+  setLoading(false);
+  document.getElementById('res-err').style.display = 'block';
+  document.getElementById('err-msg').textContent = msg;
+}
+
+function resetAll() {
+  file = null;
+  document.getElementById('file-input').value = '';
+  document.getElementById('name').value = '';
+  document.getElementById('phone').value = '';
+  document.getElementById('amount').value = '';
+  document.getElementById('cam-area').style.display = 'flex';
+  document.getElementById('preview-wrap').style.display = 'none';
+  document.getElementById('res-ok').style.display = 'none';
+  document.getElementById('res-err').style.display = 'none';
+  setProgress(0,'');
+}
+
+function p(n) { return String(n).padStart(2,'0'); }
+</script>
+</body>
+</html>
