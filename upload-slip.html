@@ -280,13 +280,14 @@ async function saveSlip() {
 
     setProgress(40, 'กำลังเตรียมไฟล์...');
 
-    const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzHvdQu0-JHjUWSRWBuGARTGznmoFCZhr7ItCks29leNI2ZbhIvidKR1Xo-Ix4NbRED/exec";
+    const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwGZ7ll8o_zNKe4DX6aAcimZbCQT3kYui0Ky5HaCe1cHzH9xjOh7RKlEbeSwvu3uygx/exec";
 
     setProgress(60, 'กำลังอัพโหลดสลิป...');
 
     const res = await fetch(APPS_SCRIPT_URL, {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      redirect: "follow",
+      headers: { "Content-Type": "text/plain" },
       body: JSON.stringify({
         image: "data:" + (file.type || "image/jpeg") + ";base64," + base64,
         mimeType: file.type || "image/jpeg",
